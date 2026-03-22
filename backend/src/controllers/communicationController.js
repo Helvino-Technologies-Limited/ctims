@@ -47,7 +47,7 @@ exports.getAnnouncements = async (req, res) => {
       [req.user.institution_id, limit, offset]
     );
     const count = await query(
-      `SELECT COUNT(*) FROM announcements WHERE institution_id=$1 AND is_published=true ${audienceFilter}`,
+      `SELECT COUNT(*) FROM announcements a WHERE a.institution_id=$1 AND a.is_published=true ${audienceFilter}`,
       [req.user.institution_id]
     );
     return successResponse(res, { announcements: result.rows, total: parseInt(count.rows[0].count), page, limit });

@@ -188,7 +188,7 @@ function UploadModal({ units, onClose, onSaved }: any) {
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
   const processFile = (file: File) => {
-    if (file.size > 7 * 1024 * 1024) { toast.error('File too large. Max 7MB.'); return; }
+    if (file.size > 45 * 1024 * 1024) { toast.error('File too large. Max 45MB.'); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       set('file_data', e.target?.result as string);
@@ -250,7 +250,7 @@ function UploadModal({ units, onClose, onSaved }: any) {
                 <div>
                   <Upload size={32} style={{ color: 'var(--text-muted)', marginBottom: 8 }} />
                   <div style={{ fontWeight: 600 }}>Drop file here or click to browse</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>PDF, Word, Excel, PPT, images, video — Max 7MB</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>PDF, Word, Excel, PPT, images, video — Max 45MB</div>
                 </div>
               )}
               <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={handleFile}

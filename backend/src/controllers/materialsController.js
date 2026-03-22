@@ -6,8 +6,8 @@ exports.uploadMaterial = async (req, res) => {
     const { title, description, unit_id, material_type, file_name, file_type, file_size, file_data } = req.body;
     if (!title) return errorResponse(res, 'Title is required');
     if (!file_data) return errorResponse(res, 'File data is required');
-    // 10MB base64 limit (~7.5MB actual file)
-    if (file_data.length > 10 * 1024 * 1024) return errorResponse(res, 'File too large. Max 7MB.');
+    // ~60MB base64 limit (~45MB actual file)
+    if (file_data.length > 60 * 1024 * 1024) return errorResponse(res, 'File too large. Max 45MB.');
 
     const result = await query(
       `INSERT INTO learning_materials

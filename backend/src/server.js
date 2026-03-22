@@ -33,8 +33,8 @@ app.use(rateLimit({ windowMs: 15*60*1000, max: 500, skip: (req) => req.path === 
 app.use('/api/auth/login', rateLimit({ windowMs: 15*60*1000, max: 20, message: { success:false, message:'Too many login attempts' } }));
 
 app.use(morgan('combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '60mb' }));
+app.use(express.urlencoded({ extended: true, limit: '60mb' }));
 
 app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/institutions',   require('./routes/institutions'));
