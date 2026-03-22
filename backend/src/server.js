@@ -48,6 +48,7 @@ app.use('/api/admissions',     require('./routes/admissions'));
 app.use('/api/communications', require('./routes/communications'));
 app.use('/api/reports',        require('./routes/reports'));
 app.use('/api/users',          require('./routes/users'));
+app.use('/api/materials',      require('./routes/materials'));
 
 app.get('/api/health', (req, res) => res.json({
   status: 'ok',

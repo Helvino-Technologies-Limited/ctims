@@ -16,6 +16,7 @@ router.get('/units', authenticate, ctrl.getUnits);
 
 router.post('/intakes', authenticate, admin, ctrl.createIntake);
 router.get('/intakes', authenticate, ctrl.getIntakes);
+router.put('/intakes/:id', authenticate, admin, ctrl.updateIntake);
 
 router.post('/timetable', authenticate, admin, ctrl.createTimetable);
 router.get('/timetable', authenticate, ctrl.getTimetable);

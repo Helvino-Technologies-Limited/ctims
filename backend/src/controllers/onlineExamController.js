@@ -130,7 +130,7 @@ exports.submitExam = async (req, res) => {
     }
 
     const maxScore = parseFloat(submission.rows[0].max_score);
-    const hasEssay = questions.rows.some((q: any) => q.question_type === 'essay');
+    const hasEssay = questions.rows.some((q) => q.question_type === 'essay');
 
     await query(
       `UPDATE exam_submissions SET status=$1, submitted_at=NOW(), total_score=$2 WHERE id=$3`,

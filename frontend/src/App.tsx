@@ -30,6 +30,7 @@ import Exams from './pages/exams/Exams';
 import Results from './pages/exams/Results';
 import TakeExam from './pages/exams/TakeExam';
 import Transcript from './pages/exams/Transcript';
+import Materials from './pages/materials/Materials';
 import Announcements from './pages/communications/Announcements';
 import FinancialReports from './pages/reports/FinancialReports';
 import AuditLogs from './pages/reports/AuditLogs';
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="exams/take/:id" element={<TakeExam />} />
           <Route path="results" element={<Results />} />
           <Route path="transcript" element={<Transcript />} />
+          <Route path="materials" element={<Materials />} />
           <Route path="transcript/:id" element={<Transcript />} />
           <Route path="communications" element={<Announcements />} />
           <Route path="reports/financial" element={<FinancialReports />} />

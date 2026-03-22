@@ -107,13 +107,16 @@ exports.getPayments = async (req, res) => {
     );
     const countResult = await query(`SELECT COUNT(*) FROM payments p JOIN students s ON p.student_id=s.id JOIN users u ON s.user_id=u.id WHERE ${cond.join(' AND ')}`, params);
 
+    // Summary respects the same filters (important: students only see their own totals)
     const summary = await query(
-      `SELECT COALESCE(SUM(amount),0) as total, COUNT(*) as count,
-              COALESCE(SUM(amount) FILTER(WHERE payment_method='mpesa'),0) as mpesa_total,
-              COALESCE(SUM(amount) FILTER(WHERE payment_method='cash'),0) as cash_total,
-              COALESCE(SUM(amount) FILTER(WHERE payment_method='bank'),0) as bank_total
-       FROM payments WHERE institution_id=$1`,
-      [req.user.institution_id]
+      `SELECT COALESCE(SUM(p.amount),0) as total, COUNT(*) as count,
+              COALESCE(SUM(p.amount) FILTER(WHERE p.payment_method='mpesa'),0) as mpesa_total,
+              COALESCE(SUM(p.amount) FILTER(WHERE p.payment_method='cash'),0) as cash_total,
+              COALESCE(SUM(p.amount) FILTER(WHERE p.payment_method='bank'),0) as bank_total
+       FROM payments p
+       JOIN students s ON p.student_id=s.id JOIN users u ON s.user_id=u.id
+       WHERE ${cond.join(' AND ')}`,
+      params
     );
 
     return successResponse(res, { payments: result.rows, total: parseInt(countResult.rows[0].count), page, limit, summary: summary.rows[0] });

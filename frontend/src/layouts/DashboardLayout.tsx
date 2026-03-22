@@ -6,7 +6,7 @@ import {
   DollarSign, ClipboardCheck, FileText, Megaphone, BarChart3,
   Settings, LogOut, ChevronDown, ChevronRight,
   Building2, UserCheck, BookMarked, Shield, Menu, X,
-  MoreHorizontal, Bell
+  MoreHorizontal, Bell, Library
 } from 'lucide-react';
 
 const superAdminNav = [
@@ -34,6 +34,7 @@ const adminNav = [
   { to: '/attendance',   icon: Calendar,        label: 'Attendance' },
   { to: '/exams',        icon: BookMarked,      label: 'Exams' },
   { to: '/results',      icon: FileText,        label: 'Results' },
+  { to: '/materials',    icon: Library,         label: 'Learning Materials' },
   { to: '/communications', icon: Megaphone,     label: 'Communications' },
   { label: 'Reports', icon: BarChart3, children: [
     { to: '/reports/financial', label: 'Financial' },
@@ -58,6 +59,7 @@ const registrarNav = [
   { to: '/attendance',   icon: Calendar,        label: 'Attendance' },
   { to: '/exams',        icon: BookMarked,      label: 'Exams' },
   { to: '/results',      icon: FileText,        label: 'Results' },
+  { to: '/materials',    icon: Library,         label: 'Learning Materials' },
   { to: '/communications', icon: Megaphone,     label: 'Communications' },
   { to: '/reports/audit', icon: Shield,         label: 'Audit Logs' },
 ];
@@ -78,6 +80,7 @@ const lecturerNav = [
   { to: '/attendance',     icon: Calendar,        label: 'Attendance' },
   { to: '/exams',          icon: BookMarked,      label: 'Exams' },
   { to: '/results',        icon: FileText,        label: 'Results' },
+  { to: '/materials',      icon: Library,         label: 'Learning Materials' },
   { to: '/communications', icon: Megaphone,       label: 'Communications' },
 ];
 
@@ -85,6 +88,7 @@ const studentNav = [
   { to: '/dashboard',      icon: LayoutDashboard, label: 'My Dashboard' },
   { to: '/exams',          icon: BookMarked,      label: 'My Exams' },
   { to: '/results',        icon: FileText,        label: 'My Results' },
+  { to: '/materials',      icon: Library,         label: 'Learning Materials' },
   { to: '/attendance',     icon: Calendar,        label: 'My Attendance' },
   { to: '/fees/payments',  icon: DollarSign,      label: 'My Fees' },
   { to: '/communications', icon: Megaphone,       label: 'Announcements' },
@@ -117,13 +121,14 @@ function getMobileTabs(role: string) {
     case 'lecturer': return [
       { to: '/dashboard',      icon: LayoutDashboard, label: 'Home' },
       { to: '/attendance',     icon: Calendar,        label: 'Attendance' },
-      { to: '/results',        icon: FileText,        label: 'Results' },
+      { to: '/materials',      icon: Library,         label: 'Materials' },
+      { to: '/exams',          icon: BookMarked,      label: 'Exams' },
     ];
     case 'student': return [
       { to: '/dashboard',      icon: LayoutDashboard, label: 'Home' },
       { to: '/exams',          icon: BookMarked,      label: 'Exams' },
+      { to: '/materials',      icon: Library,         label: 'Materials' },
       { to: '/results',        icon: FileText,        label: 'Results' },
-      { to: '/fees/payments',  icon: DollarSign,      label: 'Fees' },
     ];
     default: return [
       { to: '/dashboard',      icon: LayoutDashboard, label: 'Home' },

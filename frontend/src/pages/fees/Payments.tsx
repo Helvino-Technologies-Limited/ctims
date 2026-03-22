@@ -39,7 +39,7 @@ export default function Payments() {
       </div>
       <div className="grid-4" style={{ marginBottom:24 }}>
         {[
-          { label:'Total Collected', value:`KES ${Number(summary.total||0).toLocaleString()}`, color:'#1a56db' },
+          { label: user?.role==='student' ? 'Total Paid' : 'Total Collected', value:`KES ${Number(summary.total||0).toLocaleString()}`, color:'#1a56db' },
           { label:'M-Pesa', value:`KES ${Number(summary.mpesa_total||0).toLocaleString()}`, color:'#0e9f6e' },
           { label:'Cash', value:`KES ${Number(summary.cash_total||0).toLocaleString()}`, color:'#d97706' },
           { label:'Bank', value:`KES ${Number(summary.bank_total||0).toLocaleString()}`, color:'#7c3aed' },

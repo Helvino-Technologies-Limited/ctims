@@ -129,6 +129,20 @@ exports.getIntakes = async (req, res) => {
   } catch (err) { return errorResponse(res, 'Server error', 500); }
 };
 
+exports.updateIntake = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, program_id, start_date, end_date, capacity, status } = req.body;
+    const result = await query(
+      `UPDATE intakes SET name=$1,program_id=$2,start_date=$3,end_date=$4,capacity=$5,status=$6
+       WHERE id=$7 AND institution_id=$8 RETURNING *`,
+      [name, program_id, start_date, end_date, capacity, status || 'open', id, req.user.institution_id]
+    );
+    if (!result.rows[0]) return errorResponse(res, 'Intake not found', 404);
+    return successResponse(res, result.rows[0], 'Intake updated');
+  } catch (err) { return errorResponse(res, 'Server error', 500); }
+};
+
 // TIMETABLE
 exports.createTimetable = async (req, res) => {
   try {

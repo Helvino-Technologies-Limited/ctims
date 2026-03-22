@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Search, Plus, Eye, CheckCircle, XCircle, UserCheck, Clock, FileText } from 'lucide-react';
+import { Search, Plus, Eye, CheckCircle, XCircle, UserCheck, Clock, FileText, Calendar } from 'lucide-react';
 import api from '../../config/api';
 import toast from 'react-hot-toast';
 const statusColor: any = { pending: 'warning', reviewing: 'info', approved: 'success', rejected: 'danger' };
 
 export default function Admissions() {
+  const [tab, setTab] = useState<'applications' | 'intakes'>('applications');
   const [applications, setApplications] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({ total: 0, pending: 0, reviewing: 0, approved: 0, rejected: 0 });
   const [programs, setPrograms] = useState<any[]>([]);
@@ -52,12 +53,26 @@ export default function Admissions() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Admissions</h1>
-          <p className="page-subtitle">{total} applications</p>
+          <p className="page-subtitle">{tab === 'applications' ? `${total} applications` : 'Manage intake cycles'}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowNewModal(true)}><Plus size={16} />New Application</button>
+        {tab === 'applications'
+          ? <button className="btn btn-primary" onClick={() => setShowNewModal(true)}><Plus size={16} />New Application</button>
+          : null
+        }
       </div>
 
-      {/* Stats */}
+      <div className="tabs">
+        <button className={`tab ${tab === 'applications' ? 'active' : ''}`} onClick={() => setTab('applications')}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FileText size={14} />Applications</span>
+        </button>
+        <button className={`tab ${tab === 'intakes' ? 'active' : ''}`} onClick={() => setTab('intakes')}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={14} />Intakes</span>
+        </button>
+      </div>
+
+      {tab === 'intakes' && <IntakesPanel programs={programs} />}
+
+      {tab !== 'applications' ? null : <>{/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
         {statCards.map(s => (
           <div key={s.label} className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -169,6 +184,145 @@ export default function Admissions() {
           onSaved={() => { setShowNewModal(false); fetchAll(); }}
         />
       )}
+      </>}
+    </div>
+  );
+}
+
+/* ── Intakes Panel ── */
+function IntakesPanel({ programs }: any) {
+  const [intakes, setIntakes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+
+  const fetchIntakes = useCallback(async () => {
+    setLoading(true);
+    try { const r = await api.get('/academic/intakes'); setIntakes(r.data.data || []); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchIntakes(); }, [fetchIntakes]);
+
+  const statusColor: any = { open: 'success', closed: 'danger', upcoming: 'info' };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button className="btn btn-primary" onClick={() => { setEditing(null); setShowModal(true); }}><Plus size={16} />Create Intake</button>
+      </div>
+      <div className="card">
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr><th>Intake Name</th><th>Program</th><th>Start Date</th><th>End Date</th><th>Capacity</th><th>Enrolled</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {loading
+                ? <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40 }}><div className="loader loader-dark" style={{ margin: '0 auto' }} /></td></tr>
+                : intakes.length === 0
+                  ? <tr><td colSpan={8}><div className="empty-state"><Calendar size={48} /><p>No intakes yet. Create your first intake.</p></div></td></tr>
+                  : intakes.map((i: any) => (
+                    <tr key={i.id}>
+                      <td style={{ fontWeight: 600 }}>{i.name}</td>
+                      <td style={{ fontSize: 13 }}>{i.program_name || '—'}</td>
+                      <td style={{ fontSize: 13 }}>{i.start_date ? new Date(i.start_date).toLocaleDateString() : '—'}</td>
+                      <td style={{ fontSize: 13 }}>{i.end_date ? new Date(i.end_date).toLocaleDateString() : '—'}</td>
+                      <td style={{ textAlign: 'center' }}>{i.capacity || '—'}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 600, color: 'var(--primary)' }}>{i.enrolled_count || 0}</td>
+                      <td><span className={`badge badge-${statusColor[i.status] || 'gray'}`}>{i.status || 'open'}</span></td>
+                      <td>
+                        <button className="btn btn-secondary btn-sm" onClick={() => { setEditing(i); setShowModal(true); }}>Edit</button>
+                      </td>
+                    </tr>
+                  ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {showModal && (
+        <IntakeModal
+          editing={editing}
+          programs={programs}
+          onClose={() => setShowModal(false)}
+          onSaved={() => { setShowModal(false); fetchIntakes(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function IntakeModal({ editing, programs, onClose, onSaved }: any) {
+  const [form, setForm] = useState<any>(editing ? { ...editing } : { status: 'open' });
+  const [loading, setLoading] = useState(false);
+  const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setLoading(true);
+    try {
+      if (editing) {
+        await api.put(`/academic/intakes/${editing.id}`, form);
+        toast.success('Intake updated');
+      } else {
+        await api.post('/academic/intakes', form);
+        toast.success('Intake created');
+      }
+      onSaved();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 500 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 style={{ fontWeight: 600 }}>{editing ? 'Edit' : 'Create'} Intake</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)' }}>×</button>
+        </div>
+        <form onSubmit={submit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="form-group">
+              <label className="form-label">Intake Name *</label>
+              <input className="form-input" required placeholder="e.g. January 2025 Intake" value={form.name || ''} onChange={e => set('name', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Program *</label>
+              <select className="form-input form-select" required value={form.program_id || ''} onChange={e => set('program_id', e.target.value)}>
+                <option value="">Select program...</option>
+                {programs.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label className="form-label">Start Date</label>
+                <input type="date" className="form-input" value={form.start_date?.split('T')[0] || ''} onChange={e => set('start_date', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">End Date</label>
+                <input type="date" className="form-input" value={form.end_date?.split('T')[0] || ''} onChange={e => set('end_date', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Capacity</label>
+                <input type="number" className="form-input" min={1} placeholder="Max students" value={form.capacity || ''} onChange={e => set('capacity', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <select className="form-input form-select" value={form.status || 'open'} onChange={e => set('status', e.target.value)}>
+                  <option value="open">Open</option>
+                  <option value="upcoming">Upcoming</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? <span className="loader" /> : editing ? 'Update Intake' : 'Create Intake'}</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
