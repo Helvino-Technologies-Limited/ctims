@@ -12,9 +12,11 @@ exports.login = async (req, res) => {
     if (!email || !password) return errorResponse(res, 'Email and password required');
 
     const result = await query(
-      `SELECT u.*, i.name as institution_name, i.status as inst_status, i.subscription_status
+      `SELECT u.*, i.name as institution_name, i.status as inst_status, i.subscription_status,
+              s.id as student_id
        FROM users u
        LEFT JOIN institutions i ON u.institution_id = i.id
+       LEFT JOIN students s ON s.user_id = u.id
        WHERE u.email = $1`,
       [email.toLowerCase().trim()]
     );
@@ -47,9 +49,11 @@ exports.getMe = async (req, res) => {
       `SELECT u.id, u.email, u.role, u.first_name, u.last_name, u.phone, u.profile_photo,
               u.institution_id, u.last_login, u.created_at,
               i.name as institution_name, i.type as institution_type, i.logo_url,
-              i.status as institution_status, i.subscription_status
+              i.status as institution_status, i.subscription_status,
+              s.id as student_id
        FROM users u
        LEFT JOIN institutions i ON u.institution_id = i.id
+       LEFT JOIN students s ON s.user_id = u.id
        WHERE u.id = $1`,
       [req.user.id]
     );
