@@ -115,11 +115,15 @@ exports.createIntake = async (req, res) => {
 
 exports.getIntakes = async (req, res) => {
   try {
+    const { program_id } = req.query;
+    const cond = ['i.institution_id=$1'];
+    const params = [req.user.institution_id];
+    if (program_id) { cond.push('i.program_id=$2'); params.push(program_id); }
     const result = await query(
       `SELECT i.*, p.name as program_name, COUNT(s.id) as enrolled_count
        FROM intakes i LEFT JOIN programs p ON i.program_id=p.id LEFT JOIN students s ON s.intake_id=i.id
-       WHERE i.institution_id=$1 GROUP BY i.id,p.name ORDER BY i.start_date DESC`,
-      [req.user.institution_id]
+       WHERE ${cond.join(' AND ')} GROUP BY i.id,p.name ORDER BY i.start_date DESC`,
+      params
     );
     return successResponse(res, result.rows);
   } catch (err) { return errorResponse(res, 'Server error', 500); }

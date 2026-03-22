@@ -1,5 +1,6 @@
-const { query } = require('../config/database');
-const { successResponse, errorResponse, paginate, generateApplicationNumber } = require('../utils/helpers');
+const bcrypt = require('bcryptjs');
+const { query, getClient } = require('../config/database');
+const { successResponse, errorResponse, paginate, generateApplicationNumber, generateStudentNumber } = require('../utils/helpers');
 
 exports.submitApplication = async (req, res) => {
   try {
@@ -58,6 +59,100 @@ exports.reviewApplication = async (req, res) => {
     if (!result.rows[0]) return errorResponse(res, 'Application not found', 404);
     return successResponse(res, result.rows[0], `Application ${status}`);
   } catch (err) { return errorResponse(res, 'Server error', 500); }
+};
+
+exports.getStats = async (req, res) => {
+  try {
+    const id = req.user.institution_id;
+    const result = await query(
+      `SELECT status, COUNT(*) as count FROM applications WHERE institution_id=$1 GROUP BY status`,
+      [id]
+    );
+    const counts = { total: 0, pending: 0, reviewing: 0, approved: 0, rejected: 0 };
+    result.rows.forEach(r => { counts[r.status] = parseInt(r.count); counts.total += parseInt(r.count); });
+    return successResponse(res, counts);
+  } catch (err) { return errorResponse(res, 'Server error', 500); }
+};
+
+exports.submitManualApplication = async (req, res) => {
+  try {
+    const {
+      program_id, intake_id,
+      first_name, last_name, email, phone, gender, date_of_birth,
+      national_id, address, previous_school, qualifications
+    } = req.body;
+    const institution_id = req.user.institution_id;
+    const appNumber = await generateApplicationNumber();
+    const result = await query(
+      `INSERT INTO applications (institution_id,program_id,intake_id,first_name,last_name,email,phone,gender,
+        date_of_birth,national_id,address,previous_school,qualifications,application_number,status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'reviewing') RETURNING *`,
+      [institution_id, program_id, intake_id, first_name, last_name, email, phone, gender,
+       date_of_birth, national_id, address, previous_school, qualifications, appNumber]
+    );
+    return successResponse(res, result.rows[0], 'Application created', 201);
+  } catch (err) {
+    console.error(err);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
+exports.convertToStudent = async (req, res) => {
+  const client = await getClient();
+  try {
+    const { id } = req.params;
+    const { program_id, intake_id, year_of_study, semester, guardian_name, guardian_phone, guardian_email, guardian_relationship } = req.body;
+
+    const appResult = await client.query(
+      `SELECT * FROM applications WHERE id=$1 AND institution_id=$2`,
+      [id, req.user.institution_id]
+    );
+    const app = appResult.rows[0];
+    if (!app) return errorResponse(res, 'Application not found', 404);
+    if (app.status !== 'approved') return errorResponse(res, 'Application must be approved first', 400);
+    if (app.converted_to_student) return errorResponse(res, 'Already converted to student', 400);
+
+    await client.query('BEGIN');
+
+    const studentNumber = await generateStudentNumber(req.user.institution_id);
+    const tempPassword = `${studentNumber}@CTIMS`;
+    const hash = await bcrypt.hash(tempPassword, 12);
+
+    const userResult = await client.query(
+      `INSERT INTO users (institution_id, email, password_hash, role, first_name, last_name, phone, gender, date_of_birth)
+       VALUES ($1,$2,$3,'student',$4,$5,$6,$7,$8) RETURNING *`,
+      [req.user.institution_id, app.email, hash, app.first_name, app.last_name, app.phone, app.gender, app.date_of_birth]
+    );
+    const user = userResult.rows[0];
+
+    const studentResult = await client.query(
+      `INSERT INTO students (institution_id, user_id, student_number, program_id, intake_id, national_id,
+        guardian_name, guardian_phone, guardian_email, guardian_relationship, year_of_study, semester)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [req.user.institution_id, user.id, studentNumber,
+       program_id || app.program_id, intake_id || app.intake_id, app.national_id,
+       guardian_name||null, guardian_phone||null, guardian_email||null, guardian_relationship||null,
+       year_of_study||1, semester||1]
+    );
+
+    await client.query(
+      `UPDATE applications SET converted_to_student=true, student_id=$1, updated_at=NOW() WHERE id=$2`,
+      [studentResult.rows[0].id, id]
+    );
+
+    await client.query('COMMIT');
+    return successResponse(res, {
+      student: studentResult.rows[0],
+      student_number: studentNumber,
+      temp_password: tempPassword
+    }, 'Student registered successfully', 201);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    return errorResponse(res, err.message || 'Server error', 500);
+  } finally {
+    client.release();
+  }
 };
 
 exports.getPublicPrograms = async (req, res) => {

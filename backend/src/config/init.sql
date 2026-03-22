@@ -169,6 +169,8 @@ CREATE TABLE IF NOT EXISTS applications (
   reviewed_at TIMESTAMP,
   rejection_reason TEXT,
   application_number VARCHAR(50) UNIQUE,
+  converted_to_student BOOLEAN DEFAULT FALSE,
+  student_id UUID REFERENCES students(id),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
