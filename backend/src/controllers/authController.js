@@ -89,3 +89,18 @@ exports.updateProfile = async (req, res) => {
     return errorResponse(res, 'Server error', 500);
   }
 };
+
+exports.uploadPhoto = async (req, res) => {
+  try {
+    const { photo } = req.body; // base64 data URL
+    if (!photo) return errorResponse(res, 'No photo provided');
+    if (photo.length > 2 * 1024 * 1024) return errorResponse(res, 'Image too large. Max 1.5MB.');
+    const result = await query(
+      'UPDATE users SET profile_photo=$1, updated_at=NOW() WHERE id=$2 RETURNING profile_photo',
+      [photo, req.user.id]
+    );
+    return successResponse(res, { profile_photo: result.rows[0].profile_photo }, 'Photo updated');
+  } catch (err) {
+    return errorResponse(res, 'Server error', 500);
+  }
+};

@@ -28,6 +28,8 @@ import FeeDefaulters from './pages/fees/FeeDefaulters';
 import Attendance from './pages/attendance/Attendance';
 import Exams from './pages/exams/Exams';
 import Results from './pages/exams/Results';
+import TakeExam from './pages/exams/TakeExam';
+import Transcript from './pages/exams/Transcript';
 import Announcements from './pages/communications/Announcements';
 import FinancialReports from './pages/reports/FinancialReports';
 import AuditLogs from './pages/reports/AuditLogs';
@@ -76,7 +78,10 @@ export default function App() {
           <Route path="fees/defaulters" element={<FeeDefaulters />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="exams" element={<Exams />} />
+          <Route path="exams/take/:id" element={<TakeExam />} />
           <Route path="results" element={<Results />} />
+          <Route path="transcript" element={<Transcript />} />
+          <Route path="transcript/:id" element={<Transcript />} />
           <Route path="communications" element={<Announcements />} />
           <Route path="reports/financial" element={<FinancialReports />} />
           <Route path="reports/audit" element={<AuditLogs />} />

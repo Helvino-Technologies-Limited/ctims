@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Printer } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../config/api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
@@ -13,7 +14,9 @@ export default function Results() {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<'enter'|'view'>('view');
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const canEnter = ['admin', 'registrar', 'lecturer', 'superadmin'].includes(user?.role || '');
+  const isStudent = user?.role === 'student';
 
   useEffect(() => {
     api.get('/exams').then(r => setExams(r.data.data));
@@ -63,7 +66,10 @@ export default function Results() {
   return (
     <div className="fade-in">
       <div className="page-header">
-        <div><h1 className="page-title">Exam Results</h1><p className="page-subtitle">Enter and view student results</p></div>
+        <div><h1 className="page-title">Exam Results</h1><p className="page-subtitle">{isStudent ? 'Your academic results' : 'Enter and view student results'}</p></div>
+        {isStudent && user?.student_id && (
+          <button className="btn btn-primary" onClick={() => navigate('/transcript')}><Printer size={16} />Print Transcript</button>
+        )}
       </div>
       <div className="tabs">
         <button className={`tab ${tab==='view'?'active':''}`} onClick={() => setTab('view')}>View Results</button>

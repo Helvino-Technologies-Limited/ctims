@@ -83,6 +83,7 @@ const lecturerNav = [
 
 const studentNav = [
   { to: '/dashboard',      icon: LayoutDashboard, label: 'My Dashboard' },
+  { to: '/exams',          icon: BookMarked,      label: 'My Exams' },
   { to: '/results',        icon: FileText,        label: 'My Results' },
   { to: '/attendance',     icon: Calendar,        label: 'My Attendance' },
   { to: '/fees/payments',  icon: DollarSign,      label: 'My Fees' },
@@ -120,6 +121,7 @@ function getMobileTabs(role: string) {
     ];
     case 'student': return [
       { to: '/dashboard',      icon: LayoutDashboard, label: 'Home' },
+      { to: '/exams',          icon: BookMarked,      label: 'Exams' },
       { to: '/results',        icon: FileText,        label: 'Results' },
       { to: '/fees/payments',  icon: DollarSign,      label: 'Fees' },
     ];

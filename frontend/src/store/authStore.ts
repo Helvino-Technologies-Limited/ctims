@@ -7,6 +7,8 @@ interface User {
   role: string;
   first_name: string;
   last_name: string;
+  phone?: string;
+  profile_photo?: string;
   institution_id: string;
   institution_name: string;
   institution_type: string;

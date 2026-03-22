@@ -104,8 +104,12 @@ exports.getStudentTranscript = async (req, res) => {
     }
 
     const student = await query(
-      `SELECT s.*, u.first_name, u.last_name, u.email, p.name as program_name, p.code as program_code
-       FROM students s JOIN users u ON s.user_id=u.id JOIN programs p ON s.program_id=p.id
+      `SELECT s.*, u.first_name, u.last_name, u.email, u.profile_photo,
+              p.name as program_name, p.code as program_code,
+              i.name as institution_name, i.logo_url, i.address as institution_address, i.phone as institution_phone
+       FROM students s JOIN users u ON s.user_id=u.id
+       JOIN programs p ON s.program_id=p.id
+       JOIN institutions i ON s.institution_id=i.id
        WHERE s.id=$1 AND s.institution_id=$2`,
       [student_id, req.user.institution_id]
     );
