@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ctims-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SUPERADMIN_EMAIL
+        value: helvinotechltd@gmail.com
+      - key: SUPERADMIN_PASSWORD
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
