@@ -10,7 +10,12 @@ const authenticate = async (req, res, next) => {
     const token = auth.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const result = await query(
-      'SELECT u.*, i.name as institution_name, i.status as institution_status FROM users u LEFT JOIN institutions i ON u.institution_id = i.id WHERE u.id = $1 AND u.is_active = true',
+      `SELECT u.*, i.name as institution_name, i.status as institution_status,
+              s.id as student_id
+       FROM users u
+       LEFT JOIN institutions i ON u.institution_id = i.id
+       LEFT JOIN students s ON s.user_id = u.id
+       WHERE u.id = $1 AND u.is_active = true`,
       [decoded.userId]
     );
     if (!result.rows[0]) {

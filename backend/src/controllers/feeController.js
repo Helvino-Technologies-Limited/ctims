@@ -83,7 +83,11 @@ exports.getPayments = async (req, res) => {
     let params = [req.user.institution_id];
     let idx = 2;
 
-    if (student_id) { cond.push(`p.student_id=$${idx++}`); params.push(student_id); }
+    // Students can only see their own payments
+    if (req.user.role === 'student') {
+      cond.push(`p.student_id=$${idx++}`);
+      params.push(req.user.student_id);
+    } else if (student_id) { cond.push(`p.student_id=$${idx++}`); params.push(student_id); }
     if (payment_method) { cond.push(`p.payment_method=$${idx++}`); params.push(payment_method); }
     if (academic_year) { cond.push(`p.academic_year=$${idx++}`); params.push(academic_year); }
     if (semester) { cond.push(`p.semester=$${idx++}`); params.push(semester); }
@@ -120,6 +124,11 @@ exports.getStudentBalance = async (req, res) => {
   try {
     const { student_id } = req.params;
     const { academic_year, semester } = req.query;
+
+    // Students can only view their own balance
+    if (req.user.role === 'student' && req.user.student_id !== student_id) {
+      return errorResponse(res, 'Access denied', 403);
+    }
 
     const student = await query(`SELECT s.*, p.name as program_name FROM students s JOIN programs p ON s.program_id=p.id WHERE s.id=$1 AND s.institution_id=$2`, [student_id, req.user.institution_id]);
     if (!student.rows[0]) return errorResponse(res, 'Student not found', 404);

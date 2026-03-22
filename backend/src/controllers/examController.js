@@ -71,7 +71,13 @@ exports.getResults = async (req, res) => {
     let params = [req.user.institution_id];
     let idx = 2;
     if (exam_id) { cond.push(`r.exam_id=$${idx++}`); params.push(exam_id); }
-    if (student_id) { cond.push(`r.student_id=$${idx++}`); params.push(student_id); }
+
+    // Students can only see their own results
+    if (req.user.role === 'student') {
+      cond.push(`r.student_id=$${idx++}`);
+      params.push(req.user.student_id);
+    } else if (student_id) { cond.push(`r.student_id=$${idx++}`); params.push(student_id); }
+
     if (unit_id) { cond.push(`r.unit_id=$${idx++}`); params.push(unit_id); }
 
     const result = await query(
@@ -91,6 +97,12 @@ exports.getResults = async (req, res) => {
 exports.getStudentTranscript = async (req, res) => {
   try {
     const { student_id } = req.params;
+
+    // Students can only view their own transcript
+    if (req.user.role === 'student' && req.user.student_id !== student_id) {
+      return errorResponse(res, 'Access denied', 403);
+    }
+
     const student = await query(
       `SELECT s.*, u.first_name, u.last_name, u.email, p.name as program_name, p.code as program_code
        FROM students s JOIN users u ON s.user_id=u.id JOIN programs p ON s.program_id=p.id

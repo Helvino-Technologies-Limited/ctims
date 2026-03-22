@@ -1,12 +1,13 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/studentController');
 const { authenticate, authorize } = require('../middleware/auth');
-const allow = authenticate, admin = authorize('admin','registrar','superadmin');
+const admin = authorize('admin','registrar','superadmin');
+const staffOnly = authorize('admin','registrar','superadmin','finance','lecturer');
 
-router.get('/dashboard', allow, ctrl.getDashboardStats);
-router.post('/', allow, admin, ctrl.createStudent);
-router.get('/', allow, ctrl.getStudents);
-router.get('/:id', allow, ctrl.getStudent);
-router.put('/:id', allow, admin, ctrl.updateStudent);
+router.get('/dashboard', authenticate, staffOnly, ctrl.getDashboardStats);
+router.post('/', authenticate, admin, ctrl.createStudent);
+router.get('/', authenticate, staffOnly, ctrl.getStudents);
+router.get('/:id', authenticate, ctrl.getStudent);
+router.put('/:id', authenticate, admin, ctrl.updateStudent);
 
 module.exports = router;

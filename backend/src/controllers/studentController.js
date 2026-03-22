@@ -88,6 +88,11 @@ exports.getStudent = async (req, res) => {
     const { id } = req.params;
     const institutionId = req.user.institution_id;
 
+    // Students can only view their own record
+    if (req.user.role === 'student' && req.user.student_id !== id) {
+      return errorResponse(res, 'Access denied', 403);
+    }
+
     const result = await query(
       `SELECT s.*, u.first_name, u.last_name, u.email, u.phone, u.gender, u.date_of_birth, u.profile_photo,
               p.name as program_name, p.code as program_code, p.duration_months,

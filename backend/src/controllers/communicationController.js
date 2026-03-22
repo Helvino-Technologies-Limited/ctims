@@ -33,14 +33,23 @@ exports.createAnnouncement = async (req, res) => {
 exports.getAnnouncements = async (req, res) => {
   try {
     const { page, limit, offset } = paginate(req.query.page, req.query.limit);
+
+    // Students only see announcements targeted to 'all' or 'students'
+    const audienceFilter = req.user.role === 'student'
+      ? `AND a.target_audience IN ('all', 'students')`
+      : '';
+
     const result = await query(
       `SELECT a.*, u.first_name||' '||u.last_name as published_by_name, p.name as program_name
        FROM announcements a LEFT JOIN users u ON a.published_by=u.id LEFT JOIN programs p ON a.program_id=p.id
-       WHERE a.institution_id=$1 AND a.is_published=true
+       WHERE a.institution_id=$1 AND a.is_published=true ${audienceFilter}
        ORDER BY a.created_at DESC LIMIT $2 OFFSET $3`,
       [req.user.institution_id, limit, offset]
     );
-    const count = await query('SELECT COUNT(*) FROM announcements WHERE institution_id=$1 AND is_published=true', [req.user.institution_id]);
+    const count = await query(
+      `SELECT COUNT(*) FROM announcements WHERE institution_id=$1 AND is_published=true ${audienceFilter}`,
+      [req.user.institution_id]
+    );
     return successResponse(res, { announcements: result.rows, total: parseInt(count.rows[0].count), page, limit });
   } catch (err) { return errorResponse(res, 'Server error', 500); }
 };

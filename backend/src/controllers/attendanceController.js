@@ -35,7 +35,12 @@ exports.getAttendance = async (req, res) => {
     let idx = 2;
 
     if (unit_id) { cond.push(`a.unit_id=$${idx++}`); params.push(unit_id); }
-    if (student_id) { cond.push(`a.student_id=$${idx++}`); params.push(student_id); }
+
+    // Students can only see their own attendance
+    if (req.user.role === 'student') {
+      cond.push(`a.student_id=$${idx++}`);
+      params.push(req.user.student_id);
+    } else if (student_id) { cond.push(`a.student_id=$${idx++}`); params.push(student_id); }
     if (date_from) { cond.push(`a.date >= $${idx++}`); params.push(date_from); }
     if (date_to) { cond.push(`a.date <= $${idx++}`); params.push(date_to); }
 
