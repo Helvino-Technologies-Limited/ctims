@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FileText } from 'lucide-react';
 import api from '../../config/api';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Results() {
   const [exams, setExams] = useState<any[]>([]);
@@ -11,6 +12,8 @@ export default function Results() {
   const [marks, setMarks] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<'enter'|'view'>('view');
+  const { user } = useAuthStore();
+  const canEnter = ['admin', 'registrar', 'lecturer', 'superadmin'].includes(user?.role || '');
 
   useEffect(() => {
     api.get('/exams').then(r => setExams(r.data.data));
@@ -64,7 +67,7 @@ export default function Results() {
       </div>
       <div className="tabs">
         <button className={`tab ${tab==='view'?'active':''}`} onClick={() => setTab('view')}>View Results</button>
-        <button className={`tab ${tab==='enter'?'active':''}`} onClick={() => setTab('enter')}>Enter Marks</button>
+        {canEnter && <button className={`tab ${tab==='enter'?'active':''}`} onClick={() => setTab('enter')}>Enter Marks</button>}
       </div>
       {tab==='view' && (
         <div className="card">

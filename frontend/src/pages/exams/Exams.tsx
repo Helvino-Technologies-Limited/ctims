@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import api from '../../config/api';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Exams() {
   const [exams, setExams] = useState<any[]>([]);
@@ -9,6 +10,8 @@ export default function Exams() {
   const [units, setUnits] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuthStore();
+  const canSchedule = ['admin', 'registrar', 'lecturer', 'superadmin'].includes(user?.role || '');
 
   const doFetch = useCallback(async () => {
     setLoading(true);
@@ -27,7 +30,7 @@ export default function Exams() {
     <div className="fade-in">
       <div className="page-header">
         <div><h1 className="page-title">Exams</h1><p className="page-subtitle">{exams.length} exams scheduled</p></div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={16} />Schedule Exam</button>
+        {canSchedule && <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={16} />Schedule Exam</button>}
       </div>
       <div className="card">
         <div className="table-container">
@@ -51,7 +54,7 @@ export default function Exams() {
           </table>
         </div>
       </div>
-      {showModal && <ScheduleExamModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); doFetch(); }} programs={programs} units={units} />}
+      {showModal && canSchedule && <ScheduleExamModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); doFetch(); }} programs={programs} units={units} />}
     </div>
   );
 }

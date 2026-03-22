@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../config/api';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Attendance() {
   const [units, setUnits] = useState<any[]>([]);
@@ -9,13 +10,19 @@ export default function Attendance() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [records, setRecords] = useState<any>({});
   const [summary, setSummary] = useState<any[]>([]);
-  const [tab, setTab] = useState('mark');
+  const [myAttendance, setMyAttendance] = useState<any[]>([]);
+  const { user } = useAuthStore();
+  const isStudent = user?.role === 'student';
+  const canMark   = ['admin', 'lecturer', 'registrar', 'superadmin'].includes(user?.role || '');
+  const [tab, setTab] = useState(canMark ? 'mark' : 'summary');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { api.get('/academic/units').then(r => setUnits(r.data.data)); }, []);
+  useEffect(() => {
+    if (!isStudent) api.get('/academic/units').then(r => setUnits(r.data.data));
+  }, [isStudent]);
 
   useEffect(() => {
-    if (selectedUnit && date) {
+    if (!isStudent && selectedUnit && date) {
       api.get('/attendance/students', { params: { unit_id: selectedUnit, date } }).then(r => {
         setStudents(r.data.data);
         const initial: any = {};
@@ -23,9 +30,15 @@ export default function Attendance() {
         setRecords(initial);
       });
     }
-  }, [selectedUnit, date]);
+  }, [isStudent, selectedUnit, date]);
 
-  useEffect(() => { api.get('/attendance/summary').then(r => setSummary(r.data.data)); }, []);
+  useEffect(() => {
+    if (isStudent) {
+      api.get('/attendance').then(r => setMyAttendance(r.data.data || []));
+    } else {
+      api.get('/attendance/summary').then(r => setSummary(r.data.data));
+    }
+  }, [isStudent]);
 
   const submitAttendance = async () => {
     if (!selectedUnit) { toast.error('Select a unit'); return; }
@@ -39,19 +52,72 @@ export default function Attendance() {
 
   const statusColor: any = { present:'#0e9f6e', absent:'#dc2626', late:'#d97706', excused:'#7c3aed' };
 
+  // Student view — their own attendance only
+  if (isStudent) {
+    const present = myAttendance.filter((a:any) => a.status === 'present').length;
+    const total   = myAttendance.length;
+    const rate    = total > 0 ? Math.round((present/total)*100) : 0;
+    return (
+      <div className="fade-in">
+        <div className="page-header">
+          <div><h1 className="page-title">My Attendance</h1><p className="page-subtitle">{total} recorded sessions</p></div>
+        </div>
+        <div className="card" style={{ marginBottom:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <span style={{ fontWeight:600, fontSize:15 }}>Overall Attendance Rate</span>
+            <span style={{ fontWeight:800, fontSize:22, color: rate>=75?'var(--success)':rate>=50?'var(--warning)':'var(--danger)' }}>{rate}%</span>
+          </div>
+          <div style={{ background:'var(--border)', borderRadius:8, height:10, overflow:'hidden' }}>
+            <div style={{ width:`${rate}%`, height:'100%', background: rate>=75?'var(--success)':rate>=50?'var(--warning)':'var(--danger)', transition:'width 0.5s' }} />
+          </div>
+          {rate < 75 && <div style={{ marginTop:10, padding:'10px 14px', background:'#fee2e2', borderRadius:8, fontSize:13, color:'#991b1b', fontWeight:500 }}>⚠ Attendance below 75% — risk of exam barring.</div>}
+          <div style={{ display:'flex', gap:20, marginTop:16, flexWrap:'wrap' }}>
+            {[
+              { label:'Present', count: present, color:'var(--success)' },
+              { label:'Absent',  count: myAttendance.filter((a:any)=>a.status==='absent').length,  color:'var(--danger)' },
+              { label:'Late',    count: myAttendance.filter((a:any)=>a.status==='late').length,    color:'var(--warning)' },
+              { label:'Excused', count: myAttendance.filter((a:any)=>a.status==='excused').length, color:'var(--text-muted)' },
+            ].map(s => (
+              <div key={s.label} style={{ textAlign:'center' }}>
+                <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.count}</div>
+                <div style={{ fontSize:12, color:'var(--text-muted)' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card">
+          <h3 style={{ fontWeight:600, marginBottom:16, fontSize:15 }}>Attendance Record</h3>
+          <div className="table-container">
+            <table>
+              <thead><tr><th>Date</th><th>Unit</th><th>Status</th></tr></thead>
+              <tbody>
+                {myAttendance.length===0 ? (
+                  <tr><td colSpan={3}><div className="empty-state"><p>No attendance records yet</p></div></td></tr>
+                ) : myAttendance.map((a:any, i:number) => (
+                  <tr key={i}>
+                    <td style={{ fontSize:13 }}>{new Date(a.date).toLocaleDateString()}</td>
+                    <td style={{ fontSize:13 }}>{a.unit_name || '—'}</td>
+                    <td><span className={`badge badge-${a.status==='present'?'success':a.status==='absent'?'danger':a.status==='late'?'warning':'gray'}`}>{a.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fade-in">
       <div className="page-header">
         <div><h1 className="page-title">Attendance</h1><p className="page-subtitle">Mark and track student attendance</p></div>
       </div>
       <div className="tabs">
-        {['mark','summary'].map(t => (
-          <button key={t} className={`tab ${tab===t?'active':''}`} onClick={() => setTab(t)} style={{ textTransform:'capitalize' }}>
-            {t === 'mark' ? 'Mark Attendance' : 'Attendance Summary'}
-          </button>
-        ))}
+        {canMark && <button className={`tab ${tab==='mark'?'active':''}`} onClick={() => setTab('mark')}>Mark Attendance</button>}
+        <button className={`tab ${tab==='summary'?'active':''}`} onClick={() => setTab('summary')}>Attendance Summary</button>
       </div>
-      {tab === 'mark' && (
+      {tab === 'mark' && canMark && (
         <div className="card">
           <div style={{ display:'flex', gap:12, marginBottom:20, flexWrap:'wrap' }}>
             <div className="form-group" style={{ flex:1, minWidth:200 }}>

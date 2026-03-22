@@ -103,7 +103,7 @@ export default function Announcements() {
           )}
         </div>
       )}
-      {showModal && <CreateAnnouncementModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); fetchAnnouncements(); }} />}
+      {showModal && canPost && <CreateAnnouncementModal onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); fetchAnnouncements(); }} />}
     </div>
   );
 }
