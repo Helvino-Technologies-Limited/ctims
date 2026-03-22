@@ -192,10 +192,6 @@ export default function DashboardLayout() {
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  // Find current page title
-  const allLinks = institutionNav.flatMap((n: any) => n.children ? n.children : [n]);
-  const currentPage = allLinks.find((n: any) => n.to && location.pathname.startsWith(n.to) && n.to !== '/dashboard')
-    || allLinks.find((n: any) => n.to === '/dashboard' && location.pathname === '/dashboard');
 
   const SidebarContent = ({ onNavClick }: { onNavClick?: () => void }) => (
     <>
